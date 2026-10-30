@@ -1,0 +1,100 @@
+HammerDB CLI v6.1.1
+Copyright © HammerDB Ltd hosted by tpc.org 2019-2026
+Type "help" for a list of commands
+Initialized new Jobs on-disk database /tmp/hammer.DB
+SETTING CONFIGURATION
+Database set to PostgreSQL
+Benchmark set to TPC-C for PostgreSQL
+Value localhost for connection:pg_host is the same as existing value localhost, no change made
+Changed connection:pg_port from 5432 to 5433 for PostgreSQL
+Value postgres for tpcc:pg_superuser is the same as existing value postgres, no change made
+Value postgres for tpcc:pg_superuserpass is the same as existing value postgres, no change made
+Dictionary "tpcc" for PostgreSQL exists but key "pg_defaultdb" doesn't, key "pg_defaultdb" cannot be found in any PostgreSQL dictionary
+Type "print dict" for valid dictionaries and keys for PostgreSQL
+Value tpcc for tpcc:pg_user is the same as existing value tpcc, no change made
+Value tpcc for tpcc:pg_pass is the same as existing value tpcc, no change made
+Value tpcc for tpcc:pg_dbase is the same as existing value tpcc, no change made
+Changed tpcc:pg_count_ware from 1 to 10 for PostgreSQL
+Changed tpcc:pg_num_vu from 1 to 4 for PostgreSQL
+Value false for tpcc:pg_partition is the same as existing value false, no change made
+Dictionary "tpcc" for PostgreSQL exists but key "pg_superuser_pass" doesn't, key "pg_superuser_pass" cannot be found in any PostgreSQL dictionary
+Type "print dict" for valid dictionaries and keys for PostgreSQL
+Dictionary Settings for PostgreSQL
+connection {
+ pg_host    = localhost
+ pg_port    = 5433
+ pg_sslmode = prefer
+}
+tpcc       {
+ pg_count_ware                  = 10
+ pg_num_vu                      = 4
+ pg_superuser                   = postgres
+ pg_superuserpass               = postgres
+ pg_defaultdbase                = postgres
+ pg_user                        = tpcc
+ pg_pass                        = tpcc
+ pg_dbase                       = tpcc
+ pg_tspace                      = pg_default
+ pg_vacuum                      = false
+ pg_dritasnap                   = false
+ pg_oracompat                   = false
+ pg_cituscompat                 = false
+ pg_citus_azure_elastic_cluster = false
+ pg_citus_loadbalancer          = 0
+ pg_storedprocs                 = false
+ pg_partition                   = false
+ pg_total_iterations            = 2147483647
+ pg_raiseerror                  = false
+ pg_keyandthink                 = false
+ pg_driver                      = timed
+ pg_rampup                      = 2
+ pg_duration                    = 5
+ pg_allwarehouse                = false
+ pg_timeprofile                 = false
+ pg_async_scale                 = false
+ pg_async_client                = 10
+ pg_async_verbose               = false
+ pg_async_delay                 = 1000
+ pg_connect_pool                = false
+}
+Script cleared
+Building 10 Warehouses with 5 Virtual Users, 4 active + 1 Monitor VU(dict value pg_num_vu is set to 4)
+Ready to create a 10 Warehouse PostgreSQL TPROC-C schema
+in host LOCALHOST:5433 sslmode PREFER under user TPCC in database TPCC?
+Enter yes or no: replied yes
+Vuser 1 created - WAIT IDLE
+Vuser 2 created - WAIT IDLE
+Vuser 3 created - WAIT IDLE
+Vuser 4 created - WAIT IDLE
+Vuser 5 created - WAIT IDLE
+Vuser 1:RUNNING
+Vuser 1:Monitor Thread
+Vuser 1:CREATING TPCC SCHEMA
+Vuser 1:CREATING DATABASE tpcc under OWNER tpcc
+Vuser 1:Using existing User tpcc for Schema build
+Vuser 1:Database with tables tpcc exists
+Error in Virtual User 1: Database tpcc exists but is not empty, specify a new or empty database name
+Vuser 1:FINISHED FAILED
+Vuser 2:RUNNING
+Vuser 2:Worker Thread
+Vuser 2:Waiting for Monitor Thread...
+Error in Virtual User 2: Schema build failed: monitor reported an error
+Vuser 2:FINISHED FAILED
+Vuser 3:RUNNING
+Vuser 3:Worker Thread
+Vuser 3:Waiting for Monitor Thread...
+Error in Virtual User 3: Schema build failed: monitor reported an error
+Vuser 3:FINISHED FAILED
+Vuser 4:RUNNING
+Vuser 4:Worker Thread
+Vuser 4:Waiting for Monitor Thread...
+Error in Virtual User 4: Schema build failed: monitor reported an error
+Vuser 4:FINISHED FAILED
+Vuser 5:RUNNING
+Vuser 5:Worker Thread
+Vuser 5:Waiting for Monitor Thread...
+Error in Virtual User 5: Schema build failed: monitor reported an error
+Vuser 5:FINISHED FAILED
+ALL VIRTUAL USERS COMPLETE
+waittocomplete command has been deprecated and is not required for version v6.1.1
+SCHEMA BUILD COMPLETE

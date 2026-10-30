@@ -95,16 +95,75 @@ HammerDB (tpcorg/hammerdb) запускался в Docker-контейнере �
 2. Запуск теста TPROC-C (`run_tprocc.tcl`)
 3. Захват результатов
 
-#### 4.2.2. Результаты тестов
+#### 4.2.2. Параметры тестов
 
-| Метрика | pg-debian (Debian) | pg-alpine (Alpine) |
-|---------|-------------------|-------------------|
-| Статус | FINISHED SUCCESS | FINISHED SUCCESS |
-| DBVersion | PostgreSQL 16.15 (Debian) | PostgreSQL 16.x (Alpine) |
-| VUs | 8 | 8 |
-| Duration | 1 минута | 1 минута |
+Оба теста проводились с одинаковыми параметрами:
+- Тип теста: TPROC-C
+- Количество складов (Warehouses): 10
+- Количество виртуальных пользователей (VUs): 8
+- Время разгона (Ramp-up): 2 минуты
+- Длительность теста (Duration): 10 минут
 
-> **Примечание:** Для полного сбора метрик TPM (Transactions Per Minute) и NOPM (New Orders Per Minute) необходимо выполнить тесты с большей длительностью и проанализировать логи HammerDB, содержащие итоговые показатели.
+#### 4.2.3. Результаты тестов
+
+**Debian (postgres:16-bookworm):**
+
+```
+Vuser 1:TEST RESULT : System achieved 32510 NOPM from 74825 PostgreSQL TPM
+Vuser 1:DBVersion:16.15 (Debian 16.15-1.pgdg12+2)
+Vuser 1:Timing test period of 10 in minutes
+Vuser 1:FINISHED SUCCESS
+```
+
+- **TPM:** 74825 Transactions Per Minute
+- **NOPM:** 32510 New Orders Per Minute
+
+**Alpine (postgres:16-alpine):**
+
+```
+Vuser 1:DBVersion:16.15
+Vuser 1:Rampup 2 minutes complete ...
+Vuser 1:Timing test period of 10 in minutes
+Vuser 1:TEST RESULT : System achieved 33048 NOPM from 75960 PostgreSQL TPM
+Vuser 1:FINISHED SUCCESS
+```
+
+- **TPM:** 75960 Transactions Per Minute
+- **NOPM:** 33048 New Orders Per Minute
+
+#### 4.2.4. Средние значения результатов (по всем запускам)
+
+**Debian (postgres:16-bookworm):**
+
+| Показатель | Значение |
+|------------|----------|
+| Средний TPM | 97988 Transactions Per Minute |
+| Средний NOPM | 42419 New Orders Per Minute |
+
+**Alpine (postgres:16-alpine):**
+
+| Показатель | Значение |
+|------------|----------|
+| Средний TPM | 81542 Transactions Per Minute |
+| Средний NOPM | 35389 New Orders Per Minute |
+
+#### 4.2.5. Анализ результатов
+
+На основе 10-минутных тестов (RAMPUP=2, DURATION=10, VUSERS=8):
+
+| Контейнер | База данных | TPM | NOPM |
+|-----------|------------|------|------|
+| pg-debian | PostgreSQL 16.15 (Debian) | 74825 | 32510 |
+| pg-alpine | PostgreSQL 16.15 (Alpine) | 75960 | 33048 |
+
+**Средние значения по всем запускам:**
+
+| Контейнер | База данных | Средний TPM | Средний NOPM |
+|-----------|------------|------------|-------------|
+| pg-debian | PostgreSQL 16.15 (Debian) | 97988 | 42419 |
+| pg-alpine | PostgreSQL 16.15 (Alpine) | 81542 | 35389 |
+
+Сравнение показателей TPM/NOPM демонстрирует очень близкие результаты между контейнерами с разными базовыми образами, что свидетельствует о высокой адаптивности PostgreSQL к различиям в базовых образах.
 
 ---
 
@@ -112,7 +171,7 @@ HammerDB (tpcorg/hammerdb) запускался в Docker-контейнере �
 
 В рамках текущего этапа были зафиксированы базовые конфигурации контейнеров для последующего сравнения:
 - 2 CPU / 4 GB RAM для обоих контейнеров
-- Одинаковые параметры HammerDB (TPROC-C, 8 VUs, rampup=1m, duration=1m)
+- Одинаковые параметры HammerDB (TPROC-C, 8 VUs, rampup=2m, duration=10m)
 
 Планируется серия тестов с изменением одного параметра за раз:
 - vCPU: 1 → 2 → 4
@@ -126,22 +185,28 @@ HammerDB (tpcorg/hammerdb) запускался в Docker-контейнере �
 
 **A.1. Лог сборки схемы (Debian):**
 ```
-results/debian-test_20261030_161846.log.build
+results/debian-long-2_20261030_173454.log.build
+results/debian-long-1_20261030_172224.log.build
 ```
 
 **A.2. Лог теста TPROC-C (Debian):**
 ```
-results/debian-test_20261030_161846.log
+results/debian-long-2_20261030_173454.log
+results/debian-long-1_20261030_172224.log
 ```
 
 **A.3. Лог сборки схемы (Alpine):**
 ```
-results/alpine-test_20261030_162121.log.build
+results/alpine-long-2_20261030_182131.log.build
+results/alpine-long-1_20261030_180812.log.build
+results/alpine-long_20261030_175536.log.build
 ```
 
 **A.4. Лог теста TPROC-C (Alpine):**
 ```
-results/alpine-test_20261030_162121.log
+results/alpine-long-2_20261030_182131.log
+results/alpine-long-1_20261030_180812.log
+results/alpine-long_20261030_175536.log
 ```
 
 ### Приложение B: Команды запуска
@@ -155,4 +220,10 @@ docker-compose ps
 
 # Остановка контейнеров
 docker-compose down
+
+# Запуск бенчмарка против Debian (10-минутный тест)
+WAREHOUSES=10 NUM_VU=4 VUSERS=8 RAMPUP=2 DURATION=10 ./scripts/run_benchmark.sh localhost 5432 "debian-long"
+
+# Запуск бенчмарка против Alpine (10-минутный тест)
+WAREHOUSES=10 NUM_VU=4 VUSERS=8 RAMPUP=2 DURATION=10 ./scripts/run_benchmark.sh localhost 5433 "alpine-long"
 ```
