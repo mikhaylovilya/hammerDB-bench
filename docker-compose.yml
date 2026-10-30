@@ -1,0 +1,51 @@
+# Docker Compose for hammerDB benchmark: Compare SUDDB performance across different base images
+# Two PostgreSQL containers with identical resource limits but different base images (Debian vs Alpine)
+
+services:
+  pg-debian:
+    image: postgres:16-bookworm
+    container_name: pg-debian
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+    # Compose v2+ также поддерживает:
+    cpus: 2.0
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg_debian_data:/var/lib/postgresql/data
+
+  pg-alpine:
+    image: postgres:16-alpine
+    container_name: pg-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    cpus: 2.0
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg_alpine_data:/var/lib/postgresql/data
+
+volumes:
+  pg_debian_data:
+  pg_alpine_data:
