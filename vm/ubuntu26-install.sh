@@ -119,6 +119,33 @@ if [[ "$PG_POLICY" != *"Candidate: "* || "$PG_POLICY" == *"Candidate: (none)"* ]
 fi
 apt-get install -y "postgresql-${PG_VERSION}" "postgresql-client-${PG_VERSION}"
 
+# Иногда пакет ставится, но кластер main не создаётся (например, после
+# прерванной установки или с create_main_cluster = false). Доводим это до
+# рабочего состояния до того, как писать конфиги и дёргать pg_ctlcluster.
+cluster_exists() {
+  [[ -n "$(pg_lsclusters --no-header "$PG_VERSION" main 2>/dev/null | awk 'NF')" ]]
+}
+
+if ! cluster_exists; then
+  echo "==> PostgreSQL cluster ${PG_VERSION}/main not found; trying dpkg --configure -a"
+  dpkg --configure -a || echo "==> dpkg --configure -a returned non-zero; continuing"
+fi
+
+if ! cluster_exists; then
+  CLUSTER_CONF="/etc/postgresql/${PG_VERSION}/main"
+  # После неудачного прошлого запуска здесь может остаться только conf.d/ и
+  # пустой pg_hba.conf. Такой каталог не является кластером — убираем его,
+  # чтобы pg_createcluster мог создать нормальные конфиги.
+  if [[ -d "$CLUSTER_CONF" && ! -f "${CLUSTER_CONF}/postgresql.conf" ]]; then
+    mv "$CLUSTER_CONF" "${CLUSTER_CONF}.incomplete.$(date +%s)"
+    echo "==> Moved incomplete config dir to ${CLUSTER_CONF}.incomplete.*"
+  fi
+  echo "==> Creating PostgreSQL cluster ${PG_VERSION}/main"
+  pg_createcluster "$PG_VERSION" main
+fi
+
+pg_lsclusters "$PG_VERSION" main
+
 CONF_DIR="/etc/postgresql/${PG_VERSION}/main/conf.d"
 mkdir -p "$CONF_DIR"
 cat > "${CONF_DIR}/99-hammerdb.conf" <<'EOF'
@@ -128,7 +155,7 @@ password_encryption = 'scram-sha-256'
 EOF
 
 PG_HBA="/etc/postgresql/${PG_VERSION}/main/pg_hba.conf"
-if ! grep -q '# HAMMERDB-BENCH' "$PG_HBA"; then
+if ! grep -q '# HAMMERDB-BENCH' "$PG_HBA" 2>/dev/null; then
   cat >> "$PG_HBA" <<'EOF'
 # HAMMERDB-BENCH
 host all all 127.0.0.1/32 scram-sha-256
@@ -138,7 +165,7 @@ EOF
 fi
 
 systemctl enable "postgresql@${PG_VERSION}-main" >/dev/null 2>&1 || true
-pg_ctlcluster "$PG_VERSION" main restart
+pg_ctlcluster "$PG_VERSION" main restart || pg_ctlcluster "$PG_VERSION" main start
 runuser -u postgres -- psql -v ON_ERROR_STOP=1 \
   -c "ALTER USER postgres WITH PASSWORD '${PG_SUPERPASS}';"
 

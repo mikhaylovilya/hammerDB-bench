@@ -94,6 +94,17 @@ Vuser 1:TEST RESULT : System achieved 32510 NOPM from 74825 PostgreSQL TPM
 
 Не смешивай результаты с Docker-отчётом: это разные уровни изоляции.
 
+## Если кластер PostgreSQL не создался
+
+Ошибки `grep: /etc/postgresql/16/main/pg_hba.conf: No such file or directory` и `Error: specified cluster '16 main' does not exist` означают, что пакет `postgresql-16` установлен, но кластер `16/main` отсутствует. Текущий install-скрипт это исправляет: он проверяет `pg_lsclusters`, при необходимости выполняет `dpkg --configure -a`, а затем `pg_createcluster <version> main`. После повторного запуска в логе должна появиться строка `==> Creating PostgreSQL cluster 16/main` и вывод `pg_lsclusters`.
+
+Если кластер нужно создать вручную:
+
+```bash
+sudo pg_createcluster 16 main --start
+sudo pg_lsclusters
+```
+
 ## Если при установке падает TLS/GPG
 
 Ошибка `TLS connect error: ... unexpected eof while reading` и следующая за ней `gpg: no valid OpenPGP data found` означает, что `curl` не скачал ключ. Установочные скрипты уже делают следующее:
